@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  phoneNumber  String   @unique
+  passwordHash String
+  dpiPinHash   String?  // Nullable until set
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  location     Location?
+  sentShares   ShareRequest[] @relation("SentShares")
+  receivedShares ShareRequest[] @relation("ReceivedShares")
+  auditLogs    AuditLog[]
+}
+
+model Location {
+  id                   String   @id @default(uuid())
+  userId               String   @unique
+  user                 User     @relation(fields: [userId], references: [id])
+  dpi                  String   @unique // The current DPI
+  latitude             Float
+  longitude            Float
+  humanReadableAddress String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+enum ShareType {
+  REQUEST_DPI
+  SHARE_DPI
+}
+
+enum ShareStatus {
+  PENDING
+  APPROVED
+  DENIED
+  EXPIRED
+  CANCELLED
+}
+
+model ShareRequest {
+  id          String      @id @default(uuid())
+  fromUserId  String
+  fromUser    User        @relation("SentShares", fields: [fromUserId], references: [id])
+  toUserId    String
+  toUser      User        @relation("ReceivedShares", fields: [toUserId], references: [id])
+  type        ShareType
+  status      ShareStatus @default(PENDING)
+  validFrom   DateTime?
+  validUntil  DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String
+  details   String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+}
