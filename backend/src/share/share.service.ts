@@ -48,10 +48,6 @@ export class ShareService {
     }
 
     if (action === 'APPROVE') {
-      if (!pin) throw new AppError('DPI PIN required to approve', 400)
-      const isValid = await authService.verifyDpiPin(userId, pin)
-      if (!isValid) throw new AppError('Invalid DPI PIN', 401)
-      
       return prisma.shareRequest.update({
         where: { id: requestId },
         data: { status: 'APPROVED' },

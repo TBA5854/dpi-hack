@@ -27,6 +27,6 @@ app.route('/location', location)
 app.route('/share', share)
 
 export default {
-  port: 3000,
+  port: 3001,
   fetch: app.fetch,
 }

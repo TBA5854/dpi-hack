@@ -40,6 +40,25 @@ auth.post('/login', validator('json', (value, c) => {
   return c.json({ token })
 })
 
+auth.post('/set-pin', validator('json', (value, c) => {
+  const parsed = pinSchema.safeParse(value)
+  if (!parsed.success) return c.json(parsed.error, 400)
+  return parsed.data
+}), async (c) => {
+  const { pin } = c.req.valid('json')
+  
+  const authHeader = c.req.header('Authorization')
+  if (!authHeader) return c.json({ error: 'Unauthorized' }, 401)
+  const token = authHeader.split(' ')[1]
+  if (!token) return c.json({ error: 'Invalid token format' }, 401)
+  
+  const payload = authService.verifyToken(token)
+  if (!payload) return c.json({ error: 'Invalid token' }, 401)
+  
+  await authService.setDpiPin(payload.userId, pin)
+  return c.json({ message: 'PIN set successfully' })
+})
+
 // Middleware to extract user from token would be needed here for protected routes
 // For MVP, let's assume the client sends userId in body for this setup step or we add middleware later
 // Actually, let's add a simple middleware in the main index.ts or here.
