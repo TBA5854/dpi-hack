@@ -62,15 +62,59 @@ export class ShareService {
 
   async getIncomingRequests(userId: string) {
     return prisma.shareRequest.findMany({
-      where: { toUserId: userId },
+      where: { 
+        toUserId: userId,
+        status: 'PENDING'
+      },
       include: { fromUser: { select: { username: true, phoneNumber: true } } },
     })
   }
 
   async getOutgoingRequests(userId: string) {
     return prisma.shareRequest.findMany({
-      where: { fromUserId: userId },
+      where: { 
+        fromUserId: userId,
+        status: 'PENDING'
+      },
       include: { toUser: { select: { username: true, phoneNumber: true } } },
+    })
+  }
+
+  // "My Shares": People I am sharing with
+  async getActiveSentShares(userId: string) {
+    const now = new Date()
+    return prisma.shareRequest.findMany({
+      where: {
+        status: 'APPROVED',
+        validUntil: { gt: now },
+        OR: [
+          { fromUserId: userId, type: 'SHARE_DPI' }, // I shared with them
+          { toUserId: userId, type: 'REQUEST_DPI' }  // They asked, I approved
+        ]
+      },
+      include: {
+        toUser: { select: { username: true, phoneNumber: true } }, // For SHARE_DPI
+        fromUser: { select: { username: true, phoneNumber: true } } // For REQUEST_DPI
+      }
+    })
+  }
+
+  // "Others Shared to Me": People sharing with me
+  async getActiveReceivedShares(userId: string) {
+    const now = new Date()
+    return prisma.shareRequest.findMany({
+      where: {
+        status: 'APPROVED',
+        validUntil: { gt: now },
+        OR: [
+          { toUserId: userId, type: 'SHARE_DPI' },   // They shared with me
+          { fromUserId: userId, type: 'REQUEST_DPI' } // I asked, they approved
+        ]
+      },
+      include: {
+        toUser: { include: { location: true } },   // If I asked (REQUEST_DPI), target is toUser
+        fromUser: { include: { location: true } }  // If they shared (SHARE_DPI), sharer is fromUser
+      }
     })
   }
 
@@ -122,6 +166,29 @@ export class ShareService {
       updatedAt: location.updatedAt,
       validUntil: request.validUntil
     }
+  }
+
+  async revokeShare(requestId: string, userId: string) {
+    const request = await prisma.shareRequest.findUnique({ where: { id: requestId } })
+    if (!request) throw new AppError('Request not found', 404)
+
+    // Only the creator of the share (fromUser for SHARE_DPI) or the approver (toUser for REQUEST_DPI) can revoke?
+    // Actually, "Stop Sharing" implies I am sharing my location and I want to stop.
+    // Case 1: SHARE_DPI (I sent it). I am fromUser.
+    // Case 2: REQUEST_DPI (They asked, I approved). I am toUser.
+    
+    // So if I am EITHER fromUser OR toUser, I should be able to revoke/cancel it?
+    // If I am the receiver of a share (toUser in SHARE_DPI), I can "remove" it from my list, effectively revoking my own access?
+    // Let's allow either party to revoke for now.
+    
+    if (request.fromUserId !== userId && request.toUserId !== userId) {
+      throw new AppError('Not authorized to revoke this share', 403)
+    }
+
+    return prisma.shareRequest.update({
+      where: { id: requestId },
+      data: { status: 'REVOKED' } // Or delete? Let's use a status for history.
+    })
   }
 }
 

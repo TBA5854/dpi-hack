@@ -44,6 +44,7 @@ enum ShareStatus {
   DENIED
   EXPIRED
   CANCELLED
+  REVOKED
 }
 
 model ShareRequest {

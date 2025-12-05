@@ -61,6 +61,13 @@ share.post('/:id/respond', validator('json', (value, c) => {
   return c.json(result)
 })
 
+share.post('/:id/revoke', async (c) => {
+  const requestId = c.req.param('id')
+  const userId = c.get('userId')
+  await shareService.revokeShare(requestId, userId)
+  return c.json({ message: 'Share revoked' })
+})
+
 share.get('/incoming', async (c) => {
   const userId = c.get('userId')
   const reqs = await shareService.getIncomingRequests(userId)
@@ -71,6 +78,18 @@ share.get('/outgoing', async (c) => {
   const userId = c.get('userId')
   const reqs = await shareService.getOutgoingRequests(userId)
   return c.json(reqs)
+})
+
+share.get('/active-sent', async (c) => {
+  const userId = c.get('userId')
+  const shares = await shareService.getActiveSentShares(userId)
+  return c.json(shares)
+})
+
+share.get('/active-received', async (c) => {
+  const userId = c.get('userId')
+  const shares = await shareService.getActiveReceivedShares(userId)
+  return c.json(shares)
 })
 
 share.get('/:id/details', async (c) => {

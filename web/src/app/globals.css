@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+:root {
+  --background: #F8F9FA;
+  --foreground: #111827;
+
+  /* Crystal Clear Palette */
+  --primary: #2563EB;
+  --primary-foreground: #FFFFFF;
+
+  --secondary: #E0F2FE;
+  --secondary-foreground: #0369A1;
+
+  --accent: #14B8A6;
+  --accent-foreground: #FFFFFF;
+
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --glass-bg: rgba(255, 255, 255, 0.6);
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), sans-serif;
+  overflow-x: hidden;
+  /* Prevent horizontal scroll from animations */
+}
+
+/* Glassmorphism Utility */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+/* Map Filter for Light Theme */
+.map-tiles-light {
+  filter: grayscale(100%) invert(0%) contrast(90%) brightness(110%);
+}
