@@ -12,19 +12,30 @@ export class NominatimGeocoder implements Geocoder {
   async addressToCoordinates(address: string): Promise<{ lat: number; long: number } | null> {
     try {
       const url = `${this.baseUrl}/search?q=${encodeURIComponent(address)}&format=json&limit=1`;
+      console.log(`[Geocoder] Fetching: ${url}`);
+      
       const response = await fetch(url, {
         headers: { 'User-Agent': this.userAgent }
       });
       
-      if (!response.ok) return null;
+      console.log(`[Geocoder] Status: ${response.status}`);
+      
+      if (!response.ok) {
+        console.error(`[Geocoder] Failed with status: ${response.status}`);
+        return null;
+      }
       
       const data = await response.json() as any[];
+      console.log(`[Geocoder] Data length: ${data ? data.length : 'null'}`);
+      
       if (data && data.length > 0) {
+        console.log(`[Geocoder] Found: ${data[0].lat}, ${data[0].lon}`);
         return {
           lat: parseFloat(data[0].lat),
           long: parseFloat(data[0].lon)
         };
       }
+      console.log('[Geocoder] No results found.');
       return null;
     } catch (error) {
       console.error('Geocoding error:', error);
